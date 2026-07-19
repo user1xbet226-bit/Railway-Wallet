@@ -50,10 +50,9 @@ jobs:
         working-directory: ./mobile/android
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4096m"
-          SKIP_CODEGEN_VALIDATION: 1
         run: |
           chmod +x gradlew
-          ./gradlew clean assembleDebug --stacktrace --no-daemon
+          ./gradlew clean assembleDebug --stacktrace --no-daemon -x generateCodegenSchemaFromJavaScript
 
       - name: 📱 Upload Debug APK
         uses: actions/upload-artifact@v4
@@ -67,8 +66,7 @@ jobs:
         working-directory: ./mobile/android
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4096m"
-          SKIP_CODEGEN_VALIDATION: 1
-        run: ./gradlew assembleRelease -x signReleaseBundle --stacktrace --no-daemon
+        run: ./gradlew assembleRelease -x signReleaseBundle --stacktrace --no-daemon -x generateCodegenSchemaFromJavaScript
         continue-on-error: true
 
       - name: 📦 Upload Release APK
