@@ -15,7 +15,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 120
 
     steps:
       - name: 📥 Checkout code
@@ -25,7 +25,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
 
       - name: ☕ Setup JDK
         uses: actions/setup-java@v4
@@ -41,16 +40,17 @@ jobs:
           ndk-version: 27.1.12297006
 
       - name: 📦 Install npm dependencies
-        run: npm install
+        run: npm install --legacy-peer-deps
 
       - name: 🔨 Build Android Debug APK
         working-directory: ./mobile/android
         run: |
           chmod +x gradlew
-          ./gradlew clean assembleDebug
+          ./gradlew clean assembleDebug --stacktrace
 
       - name: 📱 Upload Debug APK
         uses: actions/upload-artifact@v4
+        if: success()
         with:
           name: app-debug
           path: mobile/android/app/build/outputs/apk/debug/app-debug.apk
@@ -58,7 +58,7 @@ jobs:
 
       - name: 🔐 Build Android Release APK (Unsigned)
         working-directory: ./mobile/android
-        run: ./gradlew assembleRelease -x signReleaseBundle
+        run: ./gradlew assembleRelease -x signReleaseBundle --stacktrace
         continue-on-error: true
 
       - name: 📦 Upload Release APK
@@ -72,6 +72,12 @@ jobs:
       - name: 📊 Build Summary
         if: always()
         run: |
-          echo "✅ Build completed!"
-          echo "📁 Output: mobile/android/app/build/outputs/"
-          ls -la mobile/android/app/build/outputs/apk/ || true
+          echo "✅ Build workflow completed!"
+          echo "📁 Output location: mobile/android/app/build/outputs/apk/"
+          find mobile/android/app/build/outputs -name "*.apk" 2>/dev/null || echo "No APK files found yet"
+
+      - name: ❌ Build Failed
+        if: failure()
+        run: |
+          echo "Build failed - Check the logs above for details"
+          exit 1
